@@ -23,6 +23,7 @@ import (
 	msgio "github.com/libp2p/go-msgio"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multistream"
+	"metrics"
 )
 
 var log = logging.Logger("bitswap_network")
@@ -371,7 +372,10 @@ func (bsnet *impl) FindProvidersAsync(ctx context.Context, k cid.Cid, max int) <
 
 // Provide provides the key to the network
 func (bsnet *impl) Provide(ctx context.Context, k cid.Cid) error {
-	return bsnet.routing.Provide(ctx, k, true)
+	if !metrics.CMD_CloseBackProvide {
+		return bsnet.routing.Provide(ctx, k, true)
+	}
+	return nil
 }
 
 // handleNewStream receives a new stream from the network.

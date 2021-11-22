@@ -28,6 +28,10 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multistream v0.2.0
 	go.uber.org/zap v1.16.0
+	metrics v0.0.0
 )
 
 go 1.12
+replace (
+	metrics => ./../metrics/
+)
