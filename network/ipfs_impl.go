@@ -359,6 +359,7 @@ func (bsnet *impl) FindProvidersAsync(ctx context.Context, k cid.Cid, max int) <
 			if info.ID == bsnet.host.ID() {
 				continue // ignore self as provider
 			}
+			//fmt.Printf("bitswap got provider: %s %s\n", info.ID, time.Now())
 			bsnet.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.TempAddrTTL)
 			select {
 			case <-ctx.Done():

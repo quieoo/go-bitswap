@@ -32,6 +32,5 @@ require (
 )
 
 go 1.12
-replace (
-	metrics => ./../metrics/
-)
+
+replace metrics => ./../metrics/

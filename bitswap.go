@@ -35,6 +35,7 @@ import (
 	process "github.com/jbenet/goprocess"
 	procctx "github.com/jbenet/goprocess/context"
 	peer "github.com/libp2p/go-libp2p-core/peer"
+	mymetrics "metrics"
 )
 
 var log = logging.Logger("bitswap")
@@ -183,13 +184,13 @@ func New(parent context.Context, network bsnet.BitSwapNetwork,
 	sm = bssm.New(ctx, sessionFactory, sim, sessionPeerManagerFactory, bpm, pm, notif, network.Self())
 
 	bs := &Bitswap{
-		blockstore:       bstore,
-		network:          network,
-		process:          px,
-		newBlocks:        make(chan cid.Cid, HasBlockBufferSize),
-		provideKeys:      make(chan cid.Cid, provideKeysBufferSize),
-		pm:               pm,
-		pqm:              pqm,
+		blockstore:              bstore,
+		network:                 network,
+		process:                 px,
+		newBlocks:               make(chan cid.Cid, HasBlockBufferSize),
+		provideKeys:             make(chan cid.Cid, provideKeysBufferSize),
+		pm:                      pm,
+		pqm:                     pqm,
 		sm:                      sm,
 		sim:                     sim,
 		notif:                   notif,
@@ -454,6 +455,7 @@ func (bs *Bitswap) ReceiveMessage(ctx context.Context, p peer.ID, incoming bsmsg
 	if len(iblocks) > 0 {
 		bs.updateReceiveCounters(iblocks)
 		for _, b := range iblocks {
+			mymetrics.BDMonitor.ReceiveBlock(b.Cid(), p.String())
 			log.Debugf("[recv] block; cid=%s, peer=%s", b.Cid(), p)
 		}
 	}

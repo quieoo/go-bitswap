@@ -2,9 +2,7 @@ package session
 
 import (
 	"context"
-
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
-
 	cid "github.com/ipfs/go-cid"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )
@@ -161,6 +159,7 @@ func (sws *sessionWantSender) Cancel(ks []cid.Cid) {
 // Update is called when the session receives a message with incoming blocks
 // or HAVE / DONT_HAVE
 func (sws *sessionWantSender) Update(from peer.ID, ks []cid.Cid, haves []cid.Cid, dontHaves []cid.Cid) {
+
 	hasUpdate := len(ks) > 0 || len(haves) > 0 || len(dontHaves) > 0
 	if !hasUpdate {
 		return
@@ -299,7 +298,6 @@ func (sws *sessionWantSender) onChange(changes []change) {
 	if len(cancels) > 0 {
 		sws.canceller.CancelSessionWants(sws.sessionID, cancels)
 	}
-
 	// If there are some connected peers, send any pending wants
 	if sws.spm.HasPeers() {
 		sws.sendNextWants(newlyAvailable)

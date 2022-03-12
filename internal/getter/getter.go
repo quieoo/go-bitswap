@@ -3,13 +3,12 @@ package getter
 import (
 	"context"
 	"errors"
-
 	notifications "github.com/ipfs/go-bitswap/internal/notifications"
-	logging "github.com/ipfs/go-log"
-
 	blocks "github.com/ipfs/go-block-format"
 	cid "github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
+	logging "github.com/ipfs/go-log"
+	"metrics"
 )
 
 var log = logging.Logger("bitswap")
@@ -22,6 +21,7 @@ type GetBlocksFunc func(context.Context, []cid.Cid) (<-chan blocks.Block, error)
 // blocks that returns a channel, and uses that function to return the
 // block syncronously.
 func SyncGetBlock(p context.Context, k cid.Cid, gb GetBlocksFunc) (blocks.Block, error) {
+
 	if !k.Defined() {
 		log.Error("undefined cid in GetBlock")
 		return nil, blockstore.ErrNotFound
@@ -65,7 +65,7 @@ type WantFunc func(context.Context, []cid.Cid)
 // incoming blocks.
 func AsyncGetBlocks(ctx context.Context, sessctx context.Context, keys []cid.Cid, notif notifications.PubSub,
 	want WantFunc, cwants func([]cid.Cid)) (<-chan blocks.Block, error) {
-
+	//metrics.PrintStack(20)
 	// If there are no keys supplied, just return a closed channel
 	if len(keys) == 0 {
 		out := make(chan blocks.Block)
@@ -78,6 +78,7 @@ func AsyncGetBlocks(ctx context.Context, sessctx context.Context, keys []cid.Cid
 	promise := notif.Subscribe(ctx, keys...)
 	for _, k := range keys {
 		log.Debugw("Bitswap.GetBlockRequest.Start", "cid", k)
+		metrics.BDMonitor.BitswapGet(k)
 		remaining.Add(k)
 	}
 

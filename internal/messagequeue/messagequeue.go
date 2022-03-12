@@ -3,6 +3,7 @@ package messagequeue
 import (
 	"context"
 	"math"
+	"metrics"
 	"sync"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	logging "github.com/ipfs/go-log"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
-	"go.uber.org/zap"
 )
 
 var log = logging.Logger("bitswap")
@@ -610,10 +610,11 @@ func (mq *MessageQueue) handleResponse(ks []cid.Cid) {
 }
 
 func (mq *MessageQueue) logOutgoingMessage(wantlist []bsmsg.Entry) {
-	// Save some CPU cycles and allocations if log level is higher than debug
-	if ce := sflog.Check(zap.DebugLevel, "sent message"); ce == nil {
-		return
-	}
+	/*
+		// Save some CPU cycles and allocations if log level is higher than debug
+		if ce := sflog.Check(zap.DebugLevel, "sent message"); ce == nil {
+			return
+		}*/
 
 	self := mq.network.Self()
 	for _, e := range wantlist {
@@ -634,6 +635,7 @@ func (mq *MessageQueue) logOutgoingMessage(wantlist []bsmsg.Entry) {
 				)
 			}
 		} else {
+			metrics.BDMonitor.SendWant(e.Cid, mq.p.String())
 			if e.WantType == pb.Message_Wantlist_Have {
 				log.Debugw("sent message",
 					"type", "WANT_HAVE",

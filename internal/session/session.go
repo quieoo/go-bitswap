@@ -229,6 +229,7 @@ func (s *Session) logReceiveFrom(from peer.ID, interestedKs []cid.Cid, haves []c
 
 // GetBlock fetches a single block.
 func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, error) {
+
 	return bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
 }
 
@@ -236,6 +237,7 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 // returns a channel that found blocks will be returned on. No order is
 // guaranteed on the returned blocks.
 func (s *Session) GetBlocks(ctx context.Context, keys []cid.Cid) (<-chan blocks.Block, error) {
+
 	ctx = logging.ContextWithLoggable(ctx, s.uuid)
 
 	return bsgetter.AsyncGetBlocks(ctx, s.ctx, keys, s.notif,
@@ -319,7 +321,6 @@ func (s *Session) run(ctx context.Context) {
 				// Broadcast want-haves to all peers
 				s.broadcast(ctx, oper.keys)
 			default:
-				panic("unhandled operation")
 			}
 		case <-s.idleTick.C:
 			// The session hasn't received blocks for a while, broadcast
@@ -342,6 +343,7 @@ func (s *Session) run(ctx context.Context) {
 // all peers in the session have sent DONT_HAVE for a particular set of CIDs.
 // Send want-haves to all connected peers, and search for new peers with the CID.
 func (s *Session) broadcast(ctx context.Context, wants []cid.Cid) {
+
 	// If this broadcast is because of an idle timeout (we haven't received
 	// any blocks for a while) then broadcast all pending wants
 	if wants == nil {
@@ -452,7 +454,6 @@ func (s *Session) wantBlocks(ctx context.Context, newks []cid.Cid) {
 	if s.sprm.PeersDiscovered() {
 		return
 	}
-
 	// No peers discovered yet, broadcast some want-haves
 	ks := s.sw.GetNextWants()
 	if len(ks) > 0 {

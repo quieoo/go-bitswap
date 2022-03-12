@@ -3,6 +3,7 @@ package providerquerymanager
 import (
 	"context"
 	"fmt"
+	"metrics"
 	"sync"
 	"time"
 
@@ -227,10 +228,12 @@ func (pqm *ProviderQueryManager) findProviderWorker() {
 				return
 			}
 			k := fpr.k
+			metrics.BDMonitor.FindProviders(k)
 			log.Debugf("Beginning Find Provider Request for cid: %s", k.String())
 			pqm.timeoutMutex.RLock()
 			findProviderCtx, cancel := context.WithTimeout(fpr.ctx, pqm.findProviderTimeout)
 			pqm.timeoutMutex.RUnlock()
+
 			providers := pqm.network.FindProvidersAsync(findProviderCtx, k, maxProviders)
 			wg := &sync.WaitGroup{}
 			for p := range providers {
