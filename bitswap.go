@@ -376,6 +376,9 @@ func (bs *Bitswap) receiveBlocksFrom(ctx context.Context, from peer.ID, blks []b
 			return err
 		}
 	}
+	for _, b := range wanted {
+		mymetrics.BDMonitor.PutStore(b.Cid())
+	}
 
 	// NOTE: There exists the possiblity for a race condition here.  If a user
 	// creates a node, then adds it to the dagservice while another goroutine

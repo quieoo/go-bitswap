@@ -635,6 +635,7 @@ func (mq *MessageQueue) logOutgoingMessage(wantlist []bsmsg.Entry) {
 				)
 			}
 		} else {
+			//metrics.PrintStack(10)
 			metrics.BDMonitor.SendWant(e.Cid, mq.p.String())
 			if e.WantType == pb.Message_Wantlist_Have {
 				log.Debugw("sent message",

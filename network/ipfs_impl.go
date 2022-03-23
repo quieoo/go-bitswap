@@ -351,6 +351,13 @@ func (bsnet *impl) DisconnectFrom(ctx context.Context, p peer.ID) error {
 
 // FindProvidersAsync returns a channel of providers for the given key.
 func (bsnet *impl) FindProvidersAsync(ctx context.Context, k cid.Cid, max int) <-chan peer.ID {
+	//metrics.PrintStack(20)
+	/*
+	   	/home/quieoo/desktop/IPFS-Benchmarking/local-node/go-bitswap/network/ipfs_impl.go   354   github.com/ipfs/go-bitswap/network.(*impl).FindProvidersAsync
+	    /home/quieoo/desktop/IPFS-Benchmarking/local-node/go-bitswap/internal/providerquerymanager/providerquerymanager.go   237   github.com/ipfs/go-bitswap/internal/providerquerymanager.(*ProviderQueryManager).findProviderWorker
+
+	*/
+
 	out := make(chan peer.ID, max)
 	go func() {
 		defer close(out)
@@ -359,12 +366,14 @@ func (bsnet *impl) FindProvidersAsync(ctx context.Context, k cid.Cid, max int) <
 			if info.ID == bsnet.host.ID() {
 				continue // ignore self as provider
 			}
+			log.Debugf("bitswap got provider: %s %s\n", info.ID, time.Now())
 			//fmt.Printf("bitswap got provider: %s %s\n", info.ID, time.Now())
 			bsnet.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.TempAddrTTL)
 			select {
 			case <-ctx.Done():
 				return
 			case out <- info.ID:
+				log.Debugf("IPFS_IMPL: out provider")
 			}
 		}
 	}()
