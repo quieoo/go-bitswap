@@ -460,6 +460,7 @@ func (bs *Bitswap) ReceiveMessage(ctx context.Context, p peer.ID, incoming bsmsg
 		for _, b := range iblocks {
 			mymetrics.BDMonitor.ReceiveBlock(b.Cid(), p.String())
 			log.Debugf("[recv] block; cid=%s, peer=%s", b.Cid(), p)
+			mymetrics.RecordRecv(b.Cid().String(), p.String())
 		}
 	}
 
