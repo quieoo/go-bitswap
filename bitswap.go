@@ -377,6 +377,9 @@ func (bs *Bitswap) receiveBlocksFrom(ctx context.Context, from peer.ID, blks []b
 		}
 	}
 	for _, b := range wanted {
+		if mymetrics.GetBreakDownLog {
+			fmt.Printf("%s putStore %s\n", time.Now().String(), b.Cid())
+		}
 		mymetrics.BDMonitor.PutStore(b.Cid())
 	}
 
