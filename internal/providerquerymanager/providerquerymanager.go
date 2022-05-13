@@ -119,6 +119,7 @@ func (pqm *ProviderQueryManager) SetFindProviderTimeout(findProviderTimeout time
 func (pqm *ProviderQueryManager) FindProvidersAsync(sessionCtx context.Context, k cid.Cid) <-chan peer.ID {
 	inProgressRequestChan := make(chan inProgressRequest)
 
+	log.Debugf("ProviderQueryManager.FindProvidersAsync request message to channal for %s", k)
 	select {
 	case pqm.providerQueryMessages <- &newProvideQueryMessage{
 		k:                     k,
@@ -145,7 +146,6 @@ func (pqm *ProviderQueryManager) FindProvidersAsync(sessionCtx context.Context, 
 		return ch
 	case receivedInProgressRequest = <-inProgressRequestChan:
 	}
-
 	return pqm.receiveProviders(sessionCtx, k, receivedInProgressRequest)
 }
 
@@ -237,6 +237,7 @@ func (pqm *ProviderQueryManager) findProviderWorker() {
 			providers := pqm.network.FindProvidersAsync(findProviderCtx, k, maxProviders)
 			wg := &sync.WaitGroup{}
 			for p := range providers {
+				log.Debugf("ProviderQueryManager.findProviderWorker got provider %s and try to connect to it\n", p)
 				wg.Add(1)
 				go func(p peer.ID) {
 					defer wg.Done()
@@ -245,6 +246,7 @@ func (pqm *ProviderQueryManager) findProviderWorker() {
 						log.Debugf("failed to connect to provider %s: %s", p, err)
 						return
 					}
+					log.Debugf("ProviderQueryManager.findProviderWorker finish connectTo provider %s\n", p)
 					select {
 					case pqm.providerQueryMessages <- &receivedProviderMessage{
 						k: k,
