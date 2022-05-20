@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"github.com/libp2p/go-libp2p-core/routing"
 	"time"
 
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
@@ -41,6 +42,11 @@ type PeerManager interface {
 	BroadcastWantHaves(context.Context, []cid.Cid)
 	// SendCancels tells the PeerManager to send cancels to all peers
 	SendCancels(context.Context, []cid.Cid)
+
+	AvailablePeers() []peer.ID
+
+	Connected(id peer.ID)
+	PeerQueueAvali(id peer.ID) bool
 }
 
 // SessionManager manages all the sessions
@@ -73,6 +79,7 @@ type SessionPeerManager interface {
 type ProviderFinder interface {
 	// FindProvidersAsync searches for peers that provide the given CID
 	FindProvidersAsync(ctx context.Context, k cid.Cid) <-chan peer.ID
+	GetRouting() routing.ContentRouting
 }
 
 // opType is the kind of operation that is being processed by the event loop
@@ -181,6 +188,14 @@ func (s *Session) ID() uint64 {
 	return s.id
 }
 
+func (s *Session) GetPeers() []peer.ID {
+
+	return s.sprm.Peers()
+}
+func (s *Session) GetRouting() routing.ContentRouting {
+	return s.providerFinder.GetRouting()
+}
+
 func (s *Session) Shutdown() {
 	s.shutdown()
 }
@@ -247,6 +262,26 @@ func (s *Session) GetBlocks(ctx context.Context, keys []cid.Cid) (<-chan blocks.
 			case <-ctx.Done():
 			case <-s.ctx.Done():
 			}
+		},
+		func(keys []cid.Cid) {
+			select {
+			case s.incoming <- op{op: opCancel, keys: keys}:
+			case <-s.ctx.Done():
+			}
+		},
+	)
+}
+func (s *Session) GetBlocksFrom(ctx context.Context, keys []cid.Cid, p peer.ID) (<-chan blocks.Block, error) {
+	//send WANT_BLOCKS to them
+	//bs.pm.SendWants(ctx,p,keys,nil)
+
+	ctx = logging.ContextWithLoggable(ctx, s.uuid)
+
+	return bsgetter.AsyncGetBlocks(ctx, s.ctx, keys, s.notif,
+		func(ctx context.Context, keys []cid.Cid) {
+			s.sim.RecordSessionInterest(s.id, keys)
+			s.pm.SendWants(ctx, p, keys, nil)
+
 		},
 		func(keys []cid.Cid) {
 			select {
@@ -505,4 +540,11 @@ func (lt *latencyTracker) averageLatency() time.Duration {
 func (lt *latencyTracker) receiveUpdate(count int, totalLatency time.Duration) {
 	lt.totalLatency += totalLatency
 	lt.count += count
+}
+func (s *Session) PeerConnect(id peer.ID) {
+	//s.pm.Connected(id)
+	//fmt.Printf("TODO:Session.PeerConnnect called\n")
+	if !s.pm.PeerQueueAvali(id) {
+		s.pm.Connected(id)
+	}
 }
