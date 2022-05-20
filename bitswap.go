@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/libp2p/go-libp2p-core/routing"
 
 	"sync"
 	"time"
@@ -312,6 +313,19 @@ func (bs *Bitswap) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, er
 	return bsgetter.SyncGetBlock(parent, k, bs.GetBlocks)
 }
 
+func (bs *Bitswap) GetPeers() []peer.ID {
+	return bs.sm.GetPeers()
+}
+
+func (bs *Bitswap) GetRouting() routing.ContentRouting {
+	return bs.pqm.GetRouting()
+}
+
+func (bs *Bitswap) GetBlocksFrom(ctx context.Context, keys []cid.Cid, p peer.ID) (<-chan blocks.Block, error) {
+	session := bs.sm.NewSession(ctx, bs.provSearchDelay, bs.rebroadcastDelay)
+	return session.GetBlocksFrom(ctx, keys, p)
+}
+
 // WantlistForPeer returns the currently understood list of blocks requested by a
 // given peer.
 func (bs *Bitswap) WantlistForPeer(p peer.ID) []cid.Cid {
@@ -374,6 +388,18 @@ func (bs *Bitswap) receiveBlocksFrom(ctx context.Context, from peer.ID, blks []b
 		if err != nil {
 			log.Errorf("Error writing %d blocks to datastore: %s", len(wanted), err)
 			return err
+		}
+		if mymetrics.EnablePbitswap {
+			dht := bs.GetRouting().(routing.ProviderManagerRouting)
+			for _, w := range wanted {
+				if len(w.RawData()) >= 256*1024 {
+					//not save leaf nodes of the file
+					continue
+				}
+				//fmt.Printf("%s addProvider(%s,%s)\n", time.Now().String(), w.Cid(), from)
+
+				dht.GetProviderManager().AddProvider(ctx, w.Cid().Hash(), from)
+			}
 		}
 	}
 	for _, b := range wanted {
@@ -588,4 +614,11 @@ func (bs *Bitswap) IsOnline() bool {
 // from go-blockservice, it will create a bitswap session automatically.
 func (bs *Bitswap) NewSession(ctx context.Context) exchange.Fetcher {
 	return bs.sm.NewSession(ctx, bs.provSearchDelay, bs.rebroadcastDelay)
+}
+
+func (bs *Bitswap) PeerConnect(p peer.ID) {
+	fmt.Printf("Connect to %s\n", p)
+	if !bs.pm.PeerQueueAvali(p) {
+		bs.PeerConnected(p)
+	}
 }
