@@ -3,6 +3,7 @@ package providerquerymanager
 import (
 	"context"
 	"fmt"
+	"github.com/libp2p/go-libp2p-core/routing"
 	"metrics"
 	"sync"
 	"time"
@@ -425,4 +426,13 @@ func (crm *cancelRequestMessage) handle(pqm *ProviderQueryManager) {
 		delete(pqm.inProgressRequestStatuses, crm.k)
 		requestStatus.cancelFn()
 	}
+}
+
+func (pqm *ProviderQueryManager) GetRouting() routing.ContentRouting {
+	return pqm.network.(FinderGetter).GetRouting()
+}
+
+type FinderGetter interface {
+	ProviderQueryNetwork
+	GetRouting() routing.ContentRouting
 }
