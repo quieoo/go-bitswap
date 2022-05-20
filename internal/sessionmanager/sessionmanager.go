@@ -187,3 +187,20 @@ func (sm *SessionManager) cancelWants(wants []cid.Cid) {
 	// Note: use bitswap context because session context may already be Done.
 	sm.peerManager.SendCancels(sm.ctx, wants)
 }
+
+func (sm *SessionManager) GetPeers() []peer.ID {
+	peers := make(map[peer.ID]bool)
+	var peersl []peer.ID
+
+	for _, ses := range sm.sessions {
+		ps := ses.GetPeers()
+		for _, p := range ps {
+			peers[p] = true
+		}
+	}
+	for k, _ := range peers {
+		peersl = append(peersl, k)
+	}
+
+	return peersl
+}
