@@ -244,3 +244,8 @@ func (pm *PeerManager) signalAvailability(p peer.ID, isConnected bool) {
 		}
 	}
 }
+
+func (pm *PeerManager) PeerQueueAvali(id peer.ID) bool {
+	_, ok := pm.peerQueues[id]
+	return ok
+}
