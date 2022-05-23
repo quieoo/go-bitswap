@@ -389,17 +389,16 @@ func (bs *Bitswap) receiveBlocksFrom(ctx context.Context, from peer.ID, blks []b
 			log.Errorf("Error writing %d blocks to datastore: %s", len(wanted), err)
 			return err
 		}
-		if mymetrics.EnablePbitswap {
-			dht := bs.GetRouting().(routing.ProviderManagerRouting)
-			for _, w := range wanted {
-				if len(w.RawData()) >= 256*1024 {
-					//not save leaf nodes of the file
-					continue
-				}
-				//fmt.Printf("%s addProvider(%s,%s)\n", time.Now().String(), w.Cid(), from)
 
-				dht.GetProviderManager().AddProvider(ctx, w.Cid().Hash(), from)
+		dht := bs.GetRouting().(routing.ProviderManagerRouting)
+		for _, w := range wanted {
+			if len(w.RawData()) >= 256*1024 {
+				//not save leaf nodes of the file
+				continue
 			}
+			//fmt.Printf("%s addProvider(%s,%s)\n", time.Now().String(), w.Cid(), from)
+
+			dht.GetProviderManager().AddProvider(ctx, w.Cid().Hash(), from)
 		}
 	}
 	for _, b := range wanted {
