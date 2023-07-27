@@ -2,8 +2,10 @@ package session
 
 import (
 	"context"
-	"github.com/libp2p/go-libp2p-core/routing"
+	"metrics"
 	"time"
+
+	"github.com/libp2p/go-libp2p-core/routing"
 
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
 	bsgetter "github.com/ipfs/go-bitswap/internal/getter"
@@ -344,6 +346,9 @@ func (s *Session) run(ctx context.Context) {
 				s.handleReceive(oper.keys)
 			case opWant:
 				// Client wants blocks
+				if metrics.CMD_NoneNeighbourAsking {
+					s.broadcast(ctx, oper.keys)
+				}
 				s.wantBlocks(ctx, oper.keys)
 			case opCancel:
 				// Wants were cancelled
